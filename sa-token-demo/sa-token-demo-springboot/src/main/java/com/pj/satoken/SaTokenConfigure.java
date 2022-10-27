@@ -1,9 +1,7 @@
 package com.pj.satoken;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -11,8 +9,7 @@ import com.pj.util.AjaxJson;
 
 import cn.dev33.satoken.context.SaHolder;
 import cn.dev33.satoken.filter.SaServletFilter;
-import cn.dev33.satoken.interceptor.SaAnnotationInterceptor;
-import cn.dev33.satoken.strategy.SaStrategy;
+import cn.dev33.satoken.interceptor.SaInterceptor;
 
 
 /**
@@ -24,12 +21,12 @@ import cn.dev33.satoken.strategy.SaStrategy;
 public class SaTokenConfigure implements WebMvcConfigurer {
 	
 	/**
-	 * 注册Sa-Token 的拦截器，打开注解式鉴权功能 
+	 * 注册 Sa-Token 拦截器打开注解鉴权功能  
 	 */
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
-		// 注册注解拦截器 
-		registry.addInterceptor(new SaAnnotationInterceptor()).addPathPatterns("/**");
+		// 注册 Sa-Token 拦截器打开注解鉴权功能 
+		registry.addInterceptor(new SaInterceptor()).addPathPatterns("/**");
 	}
 	
 	/**
@@ -69,17 +66,6 @@ public class SaTokenConfigure implements WebMvcConfigurer {
         			;
         		})
         		;
-    }
-    
-    /**
-     * 重写 Sa-Token 框架内部算法策略 
-     */
-    @Autowired
-    public void rewriteSaStrategy() {
-    	// 重写Sa-Token的注解处理器，增加注解合并功能 
-    	SaStrategy.me.getAnnotation = (element, annotationClass) -> {
-    		return AnnotatedElementUtils.getMergedAnnotation(element, annotationClass); 
-    	};
     }
     
 }

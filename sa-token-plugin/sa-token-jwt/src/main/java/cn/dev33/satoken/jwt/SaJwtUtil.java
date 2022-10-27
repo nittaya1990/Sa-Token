@@ -1,235 +1,182 @@
 package cn.dev33.satoken.jwt;
 
-import cn.dev33.satoken.dao.SaTokenDao;
-import cn.dev33.satoken.exception.NotLoginException;
-import cn.dev33.satoken.exception.SaTokenException;
-import cn.dev33.satoken.util.SaFoxUtil;
+import java.util.Map;
+
 import cn.hutool.json.JSONObject;
 import cn.hutool.jwt.JWT;
-import cn.hutool.jwt.JWTException;
 
 /**
- * jwt操作工具类封装 
+ * jwt 操作工具类封装 
  * @author kong
  *
  */
 public class SaJwtUtil {
 	
 	/**
+	 * 底层 saJwtTemplate 对象 
+	 */
+	public static SaJwtTemplate saJwtTemplate = new SaJwtTemplate();
+
+	/**
+	 * 获取底层 saJwtTemplate 对象 
+	 * @return /
+	 */
+	public static SaJwtTemplate getSaJwtTemplate() {
+		return saJwtTemplate;
+	}
+
+	/**
+	 * 设置底层 saJwtTemplate 对象 
+	 * @param saJwtTemplate / 
+	 */
+	public static void setSaJwtTemplate(SaJwtTemplate saJwtTemplate) {
+		SaJwtUtil.saJwtTemplate = saJwtTemplate;
+	}
+	
+	// 常量
+	
+
+	/**
 	 * key：账号类型  
 	 */
-	public static final String LOGIN_TYPE = "loginType"; 
+	public static final String LOGIN_TYPE = SaJwtTemplate.LOGIN_TYPE; 
 	
 	/**
 	 * key：账号id  
 	 */
-	public static final String LOGIN_ID = "loginId"; 
+	public static final String LOGIN_ID = SaJwtTemplate.LOGIN_ID; 
 	
 	/**
-	 * key：登录设备 
+	 * key：登录设备类型
 	 */
-	public static final String DEVICE = "device"; 
+	public static final String DEVICE = SaJwtTemplate.DEVICE; 
 	
 	/**
 	 * key：有效截止期 (时间戳) 
 	 */
-	public static final String EFF = "eff"; 
+	public static final String EFF = SaJwtTemplate.EFF; 
+
+	/**
+	 * key：乱数 （ 混入随机字符串，防止每次生成的 token 都是一样的 ）
+	 */
+	public static final String RN_STR = SaJwtTemplate.RN_STR; 
 
 	/** 
 	 * 当有效期被设为此值时，代表永不过期 
 	 */ 
-	public static final long NEVER_EXPIRE = SaTokenDao.NEVER_EXPIRE;
+	public static final long NEVER_EXPIRE = SaJwtTemplate.NEVER_EXPIRE; 
+
+	/** 
+	 * 表示一个值不存在 
+	 */ 
+	public static final long NOT_VALUE_EXPIRE = SaJwtTemplate.NOT_VALUE_EXPIRE; 
 	
-	
+	// ------ 创建
+
 	/**
 	 * 创建 jwt （简单方式）
+     * @param loginType 登录类型 
 	 * @param loginId 账号id 
+	 * @param extraData 扩展数据
      * @param keyt 秘钥
 	 * @return jwt-token 
 	 */
-    public static String createToken(Object loginId, String keyt) {
-    	
-    	// 秘钥不可以为空 
-    	SaTokenException.throwByNull(keyt, "请配置jwt秘钥");
-    	
-    	// 构建
-    	String token = JWT.create()
-			    .setPayload(LOGIN_ID, loginId)
-			    // 混入随机字符 
-			    .setPayload("rn", SaFoxUtil.getRandomString(32))
-			    .setKey(keyt.getBytes())
-			    .sign();
-    	
-    	// 返回 
-    	return token;
+    public static String createToken(String loginType, Object loginId, Map<String, Object> extraData, String keyt) {
+    	return saJwtTemplate.createToken(loginType, loginId, extraData, keyt);
     }
 
 	/**
-	 * 创建 jwt （全参数方式） 
-	 * @param loginType 账号类型 
-	 * @param loginId 账号id 
-	 * @param device 设备标识
+	 * 创建 jwt （全参数方式）
+	 * @param loginType 账号类型
+	 * @param loginId 账号id
+	 * @param device 设备类型
 	 * @param timeout token有效期 (单位 秒)
-     * @param keyt 秘钥
-	 * @return jwt-token 
+	 * @param extraData 扩展数据
+	 * @param keyt 秘钥
+	 * @return jwt-token
 	 */
-    public static String createToken(String loginType, Object loginId, String device, long timeout, String keyt) {
+	public static String createToken(String loginType, Object loginId, String device,
+									 long timeout, Map<String, Object> extraData, String keyt) {
+		return saJwtTemplate.createToken(loginType, loginId, device, timeout, extraData, keyt);
+	}
 
-    	// 秘钥不可以为空 
-    	SaTokenException.throwByNull(keyt, "请配置jwt秘钥");
-    	
-    	// 计算有效期 
-    	long effTime = timeout;
-    	if(timeout != NEVER_EXPIRE) {
-    		effTime = timeout * 1000 + System.currentTimeMillis();
-    	}
-    	
-    	// 构建
-    	String token = JWT.create()
-			    .setPayload(LOGIN_TYPE, loginType)
-			    .setPayload(LOGIN_ID, loginId)
-			    .setPayload(DEVICE, device)
-			    .setPayload(EFF, effTime)
-			    .setKey(keyt.getBytes())
-			    .sign();
-    	
-    	// 返回 
-    	return token;
-    }
+	/**
+	 * 为 JWT 对象和 keyt 秘钥，生成 token 字符串 
+	 * @param jwt JWT构建对象
+	 * @param keyt 秘钥 
+	 * @return 根据 JWT 对象和 keyt 秘钥，生成的 token 字符串
+	 */
+	public static String generateToken (JWT jwt, String keyt) {
+		return saJwtTemplate.generateToken(jwt, keyt);
+	}
+	
+	// ------ 解析 
 
     /**
-     * jwt 解析（校验签名和密码） 
+     * jwt 解析 
      * @param token Jwt-Token值 
+     * @param loginType 登录类型 
      * @param keyt 秘钥
+     * @param isCheckTimeout 是否校验 timeout 字段
      * @return 解析后的jwt 对象 
      */
-    public static JWT parseToken(String token, String keyt) {
-
-    	// 如果token为null 
-    	if(token == null) {
-    		throw NotLoginException.newInstance(null, NotLoginException.NOT_TOKEN);
-    	}
-    	
-    	// 解析 
-    	JWT jwt = null;
-    	try {
-    		jwt = JWT.of(token);
-		} catch (JWTException e) {
-			// 解析失败 
-			throw NotLoginException.newInstance(null, NotLoginException.INVALID_TOKEN, token);
-		}
-    	JSONObject payloads = jwt.getPayloads();
-    	
-    	// 校验 Token 签名 
-    	boolean verify = jwt.setKey(keyt.getBytes()).verify();
-    	if(verify == false) {
-    		throw NotLoginException.newInstance(payloads.getStr(LOGIN_TYPE), NotLoginException.INVALID_TOKEN, token);
-    	};
-    	
-    	// 校验 Token 有效期
-    	Long effTime = payloads.getLong(EFF, 0L);
-    	if(effTime != NEVER_EXPIRE) {
-    		if(effTime == null || effTime < System.currentTimeMillis()) {
-    			throw NotLoginException.newInstance(payloads.getStr(LOGIN_TYPE), NotLoginException.TOKEN_TIMEOUT, token);
-    		}
-    	}
-    	
-        // 返回 
-        return jwt;
+    public static JWT parseToken(String token, String loginType, String keyt, boolean isCheckTimeout) {
+		return saJwtTemplate.parseToken(token, loginType, keyt, isCheckTimeout);
     }
 
     /**
-     * 获取 jwt 数据载荷 （校验签名和密码） 
+     * 获取 jwt 数据载荷 （校验 sign、loginType、timeout） 
      * @param token token值
+     * @param loginType 登录类型 
      * @param keyt 秘钥 
      * @return 载荷 
      */
-    public static JSONObject getPayloads(String token, String keyt) {
-    	return parseToken(token, keyt).getPayloads();
+    public static JSONObject getPayloads(String token, String loginType, String keyt) {
+    	return saJwtTemplate.getPayloads(token, loginType, keyt);
     }
 
     /**
-     * 获取 jwt 数据载荷 （不校验签名和密码） 
+     * 获取 jwt 数据载荷 （校验 sign、loginType，不校验 timeout） 
      * @param token token值
+     * @param loginType 登录类型 
      * @param keyt 秘钥 
      * @return 载荷 
      */
-    public static JSONObject getPayloadsNotCheck(String token, String keyt) {
-    	try {
-    		JWT jwt = JWT.of(token);
-        	JSONObject payloads = jwt.getPayloads();
-        	return payloads;
-		} catch (JWTException e) {
-			return new JSONObject();
-		}
+    public static JSONObject getPayloadsNotCheck(String token, String loginType, String keyt) {
+    	return saJwtTemplate.getPayloadsNotCheck(token, loginType, keyt);
     }
     
     /**
      * 获取 jwt 代表的账号id 
      * @param token Token值 
+     * @param loginType 登录类型 
      * @param keyt 秘钥
      * @return 值 
      */
-    public static Object getLoginId(String token, String keyt) {
-    	return getPayloads(token, keyt).get(LOGIN_ID);
+    public static Object getLoginId(String token, String loginType, String keyt) {
+    	return saJwtTemplate.getLoginId(token, loginType, keyt);
     }
 
     /**
      * 获取 jwt 代表的账号id (未登录时返回null)
      * @param token Token值 
+     * @param loginType 登录类型 
      * @param keyt 秘钥
      * @return 值 
      */
-    public static Object getLoginIdOrNull(String token, String keyt) {
-    	try {
-    		return getPayloads(token, keyt).get(LOGIN_ID);
-		} catch (NotLoginException e) {
-			return null;
-		}
+    public static Object getLoginIdOrNull(String token, String loginType, String keyt) {
+    	return saJwtTemplate.getLoginIdOrNull(token, loginType, keyt);
     }
 
     /**
      * 获取 jwt 剩余有效期 
      * @param token JwtToken值 
+     * @param loginType 登录类型 
      * @param keyt 秘钥
      * @return 值 
      */
-    public static long getTimeout(String token, String keyt) {
-    	
-    	// 如果token为null 
-    	if(token == null) {
-    		return SaTokenDao.NOT_VALUE_EXPIRE;
-    	}
-    	
-    	// 取出数据 
-    	JWT jwt = null;
-    	try {
-    		jwt = JWT.of(token);
-		} catch (JWTException e) {
-			// 解析失败 
-			return SaTokenDao.NOT_VALUE_EXPIRE;
-		}
-    	JSONObject payloads = jwt.getPayloads();
-    	
-    	// 如果签名无效 
-    	boolean verify = jwt.setKey(keyt.getBytes()).verify();
-    	if(verify == false) {
-    		return SaTokenDao.NOT_VALUE_EXPIRE;
-    	};
-    	
-    	// 如果被设置为：永不过期 
-    	Long effTime = payloads.get(EFF, Long.class);
-    	if(effTime == NEVER_EXPIRE) {
-    		return NEVER_EXPIRE;
-    	}
-    	// 如果已经超时 
-    	if(effTime == null || effTime < System.currentTimeMillis()) {
-    		return SaTokenDao.NOT_VALUE_EXPIRE;
-    	}
-    	
-        // 计算timeout (转化为以秒为单位的有效时间)
-        return (effTime - System.currentTimeMillis()) / 1000;
+    public static long getTimeout(String token, String loginType, String keyt) {
+    	return saJwtTemplate.getTimeout(token, loginType, keyt);
     }
-    
-    
+
 }

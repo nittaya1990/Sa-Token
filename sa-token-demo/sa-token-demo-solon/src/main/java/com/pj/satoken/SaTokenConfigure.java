@@ -1,12 +1,14 @@
 package com.pj.satoken;
 
 
-import cn.dev33.satoken.solon.integration.SaTokenPathFilter;
+import org.noear.solon.Solon;
+import org.noear.solon.annotation.Bean;
+import org.noear.solon.annotation.Configuration;
+
 import com.pj.util.AjaxJson;
 
 import cn.dev33.satoken.context.SaHolder;
-import org.noear.solon.annotation.Bean;
-import org.noear.solon.annotation.Configuration;
+import cn.dev33.satoken.solon.integration.SaTokenPathInterceptor;
 
 
 /**
@@ -21,8 +23,8 @@ public class SaTokenConfigure {
 	 * 注册 [sa-token全局过滤器]
 	 */
 	@Bean
-	public SaTokenPathFilter tokenPathFilter() {
-		return new SaTokenPathFilter()
+	public void tokenPathFilter() {
+		Solon.app().before(new SaTokenPathInterceptor()
 
 				// 指定 [拦截路由] 与 [放行路由]
 				.addInclude("/**").addExclude("/favicon.ico")
@@ -54,7 +56,6 @@ public class SaTokenConfigure {
 							.setHeader("X-Content-Type-Options", "nosniff")
 					;
 				})
-				;
+		);
 	}
-
 }

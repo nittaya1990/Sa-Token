@@ -7,7 +7,8 @@
 	<parent>
         <groupId>cn.dev33</groupId>
         <artifactId>sa-token-plugin</artifactId>
-        <version>1.28.0</version>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <packaging>jar</packaging>
 
@@ -20,20 +21,27 @@
 		<dependency>
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-dao-redis</artifactId>
-            <version>${sa-token-version}</version>
 			<optional>true</optional>
         </dependency>
 		<dependency>
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-dao-redis-jackson</artifactId>
-            <version>${sa-token-version}</version>
+			<optional>true</optional>
+        </dependency>
+		<dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-dao-redis-fastjson</artifactId>
+			<optional>true</optional>
+        </dependency>
+		<dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-dao-redis-fastjson2</artifactId>
 			<optional>true</optional>
         </dependency>
         <!-- redis pool -->
 		<dependency>
 		    <groupId>org.apache.commons</groupId>
 		    <artifactId>commons-pool2</artifactId>
-			<version>2.5.0</version>
 			<optional>true</optional>
 		</dependency>
 	</dependencies>

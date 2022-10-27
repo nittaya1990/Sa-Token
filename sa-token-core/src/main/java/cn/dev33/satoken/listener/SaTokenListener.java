@@ -14,9 +14,10 @@ public interface SaTokenListener {
 	 * 每次登录时触发 
 	 * @param loginType 账号类别
 	 * @param loginId 账号id
+	 * @param tokenValue 本次登录产生的 token 值 
 	 * @param loginModel 登录参数
 	 */
-	public void doLogin(String loginType, Object loginId, SaLoginModel loginModel);
+	public void doLogin(String loginType, Object loginId, String tokenValue, SaLoginModel loginModel);
 			
 	/**
 	 * 每次注销时触发 
@@ -46,16 +47,19 @@ public interface SaTokenListener {
 	 * 每次被封禁时触发
 	 * @param loginType 账号类别
 	 * @param loginId 账号id
+	 * @param service 指定服务 
+	 * @param level 封禁等级 
 	 * @param disableTime 封禁时长，单位: 秒
 	 */
-	public void doDisable(String loginType, Object loginId, long disableTime);
+	public void doDisable(String loginType, Object loginId, String service, int level, long disableTime);
 	
 	/**
 	 * 每次被解封时触发
 	 * @param loginType 账号类别
 	 * @param loginId 账号id
+	 * @param service 指定服务 
 	 */
-	public void doUntieDisable(String loginType, Object loginId);
+	public void doUntieDisable(String loginType, Object loginId, String service);
 	
 	/**
 	 * 每次创建Session时触发
@@ -68,5 +72,14 @@ public interface SaTokenListener {
 	 * @param id SessionId
 	 */
 	public void doLogoutSession(String id);
+
+	/**
+	 * 每次Token续期时触发 
+	 * 
+	 * @param tokenValue token 值 
+	 * @param loginId 账号id 
+	 * @param timeout 续期时间 
+	 */
+	public void doRenewTimeout(String tokenValue,  Object loginId, long timeout);
 	
 }

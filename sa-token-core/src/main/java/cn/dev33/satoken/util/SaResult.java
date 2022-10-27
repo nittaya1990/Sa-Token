@@ -10,6 +10,7 @@ import java.util.Map;
  * code=状态码 <br>
  * msg=描述信息 <br>
  * data=携带对象 <br>
+ * 
  * @author kong
  *
  */
@@ -20,10 +21,30 @@ public class SaResult extends LinkedHashMap<String, Object> implements Serializa
 	public static final int CODE_SUCCESS = 200;		
 	public static final int CODE_ERROR = 500;		
 
+	/**
+	 * 构建 
+	 */
+	public SaResult() {
+	}
+
+	/**
+	 * 构建 
+	 * @param code 状态码
+	 * @param msg 信息
+	 * @param data 数据 
+	 */
 	public SaResult(int code, String msg, Object data) {
 		this.setCode(code);
 		this.setMsg(msg);
 		this.setData(data);
+	}
+
+	/**
+	 * 根据 Map 快速构建 
+	 * @param map / 
+	 */
+	public SaResult(Map<String, ?> map) {
+		this.setMap(map);
 	}
 	
 	/**
@@ -88,6 +109,17 @@ public class SaResult extends LinkedHashMap<String, Object> implements Serializa
 	}
 
 	/**
+	 * 获取一个值 根据自定义key 
+	 * @param <T> 要转换为的类型 
+	 * @param key key
+	 * @param cs 要转换为的类型 
+	 * @return 值 
+	 */
+	public <T> T get(String key, Class<T> cs) {
+		return SaFoxUtil.getValueByType(get(key), cs);
+	}
+
+	/**
 	 * 写入一个Map, 连缀风格
 	 * @param map map 
 	 * @return 对象自身 
@@ -137,9 +169,16 @@ public class SaResult extends LinkedHashMap<String, Object> implements Serializa
 	public String toString() {
 		return "{"
 				+ "\"code\": " + this.getCode()
-				+ ", \"msg\": \"" + this.getMsg() + "\""
-				+ ", \"data\": \"" + this.getData() + "\""
+				+ ", \"msg\": " + transValue(this.getMsg()) 
+				+ ", \"data\": " + transValue(this.getData()) 
 				+ "}";
+	}
+	
+	private String transValue(Object value) {
+		if(value instanceof String) {
+			return "\"" + value + "\"";
+		}
+		return String.valueOf(value);
 	}
 	
 }

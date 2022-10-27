@@ -218,7 +218,7 @@ public class TestController {
 	public AjaxJson search() {
 		System.out.println("--------------");
 		Ttime t = new Ttime().start();
-		List<String> tokenValue = StpUtil.searchTokenValue("8feb8265f773", 0, 10);
+		List<String> tokenValue = StpUtil.searchTokenValue("8feb8265f773", 0, 10, true);
 		for (String v : tokenValue) {
 //			SaSession session = StpUtil.getSessionBySessionId(sid);
 			System.out.println(v);
@@ -235,7 +235,6 @@ public class TestController {
 		return AjaxJson.getSuccessData("登录成功");
 	}
 
-	
 	// 测试   浏览器访问： http://localhost:8081/test/test
 	@RequestMapping("test")
 	public AjaxJson test() {
@@ -248,5 +247,5 @@ public class TestController {
 	public AjaxJson test2() {
 		return AjaxJson.getSuccess();
 	}
-	
+
 }

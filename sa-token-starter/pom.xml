@@ -7,7 +7,8 @@
 	<parent>
         <groupId>cn.dev33</groupId>
         <artifactId>sa-token-parent</artifactId>
-        <version>1.28.0</version>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <packaging>pom</packaging>
     
@@ -21,6 +22,8 @@
         <module>sa-token-spring-boot-starter</module>
         <module>sa-token-reactor-spring-boot-starter</module>
         <module>sa-token-solon-plugin</module>
+        <module>sa-token-jboot-plugin</module>
+        <module>sa-token-jfinal-plugin</module>
     </modules>
 
 </project>

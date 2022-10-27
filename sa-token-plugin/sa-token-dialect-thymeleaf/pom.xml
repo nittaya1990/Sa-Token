@@ -7,7 +7,8 @@
 	<parent>
         <groupId>cn.dev33</groupId>
         <artifactId>sa-token-plugin</artifactId>
-        <version>1.28.0</version>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <packaging>jar</packaging>
 
@@ -20,20 +21,17 @@
 		<dependency>
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-core</artifactId>
-            <version>${sa-token-version}</version>
         </dependency>
 		<!-- thymeleaf -->
 		<dependency>
 			<groupId>org.thymeleaf</groupId>
 			<artifactId>thymeleaf</artifactId>
-			<version>3.0.9.RELEASE</version>
 			<optional>true</optional>
 	    </dependency>
 		<!-- spring-boot-configuration -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-configuration-processor</artifactId>
-			<version>2.0.0.RELEASE</version>
 			<optional>true</optional>
 		</dependency>
 	</dependencies>

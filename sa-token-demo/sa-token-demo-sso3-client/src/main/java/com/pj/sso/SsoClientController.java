@@ -5,10 +5,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ejlchina.okhttps.OkHttps;
+import com.dtflys.forest.Forest;
 
-import cn.dev33.satoken.config.SaTokenConfig;
-import cn.dev33.satoken.sso.SaSsoHandle;
+import cn.dev33.satoken.config.SaSsoConfig;
+import cn.dev33.satoken.sso.SaSsoProcessor;
 import cn.dev33.satoken.sso.SaSsoUtil;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
@@ -38,15 +38,16 @@ public class SsoClientController {
 	 */
 	@RequestMapping("/sso/*")
 	public Object ssoRequest() {
-		return SaSsoHandle.clientRequest();
+		return SaSsoProcessor.instance.clientDister();
 	}
 
 	// 配置SSO相关参数 
 	@Autowired
-	private void configSso(SaTokenConfig cfg) {
+	private void configSso(SaSsoConfig sso) {
 		// 配置Http请求处理器 
-		cfg.sso.setSendHttp(url -> {
-			return OkHttps.sync(url).get().getBody().toString();
+		sso.setSendHttp(url -> {
+			System.out.println("------ 发起请求：" + url);
+			return Forest.get(url).executeAsString();
 		});
 	}
 	

@@ -8,6 +8,11 @@ package cn.dev33.satoken.context.model;
 public interface SaResponse {
 
 	/**
+	 * 指定前端可以获取到哪些响应头时使用的参数名 
+	 */
+	public static final String ACCESS_CONTROL_EXPOSE_HEADERS = "Access-Control-Expose-Headers";
+	
+	/**
 	 * 获取底层源对象 
 	 * @return see note 
 	 */
@@ -19,6 +24,16 @@ public interface SaResponse {
 	 */
 	public default void deleteCookie(String name) {
 		addCookie(name, null, null, null, 0);
+	}
+
+	/**
+	 * 删除指定Cookie 
+	 * @param name Cookie名称
+	 * @param path Cookie 路径
+	 * @param domain Cookie 作用域
+	 */
+	public default void deleteCookie(String name, String path, String domain) {
+		addCookie(name, null, path, domain, 0);
 	}
 
 	/**

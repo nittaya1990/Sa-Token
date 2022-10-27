@@ -10,7 +10,8 @@ import org.apache.dubbo.rpc.RpcContext;
 import org.apache.dubbo.rpc.RpcException;
 
 import cn.dev33.satoken.SaManager;
-import cn.dev33.satoken.id.SaIdUtil;
+import cn.dev33.satoken.context.SaTokenContextDefaultImpl;
+import cn.dev33.satoken.same.SaSameUtil;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaTokenConsts;
 
@@ -21,20 +22,22 @@ import cn.dev33.satoken.util.SaTokenConsts;
  * @author kong
  *
  */
-@Activate(group = {CommonConstants.CONSUMER}, order = -10000)
+@Activate(group = {CommonConstants.CONSUMER}, order = -30000)
 public class SaTokenDubboConsumerFilter implements Filter {
 
 	@Override
 	public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
 		
-		// 追加 Id-Token 参数 
-		if(SaManager.getConfig().getCheckIdToken()) {
-			RpcContext.getContext().setAttachment(SaIdUtil.ID_TOKEN, SaIdUtil.getToken()); 
+		// 追加 Same-Token 参数 
+		if(SaManager.getConfig().getCheckSameToken()) {
+			RpcContext.getContext().setAttachment(SaSameUtil.SAME_TOKEN, SaSameUtil.getToken()); 
 		}
 		
-		// 1. 调用前，向下传递会话Token 
-		RpcContext.getContext().setAttachment(SaTokenConsts.JUST_CREATED, StpUtil.getTokenValueNotCut()); 
-		
+		// 1. 调用前，向下传递会话Token
+		if(SaManager.getSaTokenContextOrSecond() != SaTokenContextDefaultImpl.defaultContext) {
+			RpcContext.getContext().setAttachment(SaTokenConsts.JUST_CREATED, StpUtil.getTokenValueNotCut()); 
+		}
+
 		// 2. 开始调用 
 		Result invoke = invoker.invoke(invocation);
 		

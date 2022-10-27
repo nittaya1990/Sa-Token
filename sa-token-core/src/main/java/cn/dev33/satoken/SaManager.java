@@ -1,10 +1,8 @@
 package cn.dev33.satoken;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-import cn.dev33.satoken.action.SaTokenAction;
-import cn.dev33.satoken.action.SaTokenActionDefaultImpl;
 import cn.dev33.satoken.config.SaTokenConfig;
 import cn.dev33.satoken.config.SaTokenConfigFactory;
 import cn.dev33.satoken.context.SaTokenContext;
@@ -13,8 +11,11 @@ import cn.dev33.satoken.context.second.SaTokenSecondContext;
 import cn.dev33.satoken.dao.SaTokenDao;
 import cn.dev33.satoken.dao.SaTokenDaoDefaultImpl;
 import cn.dev33.satoken.exception.SaTokenException;
-import cn.dev33.satoken.listener.SaTokenListener;
-import cn.dev33.satoken.listener.SaTokenListenerDefaultImpl;
+import cn.dev33.satoken.json.SaJsonTemplate;
+import cn.dev33.satoken.json.SaJsonTemplateDefaultImpl;
+import cn.dev33.satoken.same.SaSameTemplate;
+import cn.dev33.satoken.sign.SaSignTemplate;
+import cn.dev33.satoken.sign.SaSignTemplateDefaultImpl;
 import cn.dev33.satoken.stp.StpInterface;
 import cn.dev33.satoken.stp.StpInterfaceDefaultImpl;
 import cn.dev33.satoken.stp.StpLogic;
@@ -28,7 +29,6 @@ import cn.dev33.satoken.util.SaFoxUtil;
  * @author kong
  *
  */
-@SuppressWarnings("deprecation")
 public class SaManager {
 
 	/**
@@ -94,24 +94,6 @@ public class SaManager {
 	}
 	
 	/**
-	 * 框架行为 Bean 
-	 */
-	private volatile static SaTokenAction saTokenAction;
-	public static void setSaTokenAction(SaTokenAction saTokenAction) {
-		SaManager.saTokenAction = saTokenAction;
-	}
-	public static SaTokenAction getSaTokenAction() {
-		if (saTokenAction == null) {
-			synchronized (SaManager.class) {
-				if (saTokenAction == null) {
-					setSaTokenAction(new SaTokenActionDefaultImpl());
-				}
-			}
-		}
-		return saTokenAction;
-	}
-	
-	/**
 	 * 上下文Context Bean  
 	 */
 	private volatile static SaTokenContext saTokenContext;
@@ -158,24 +140,6 @@ public class SaManager {
 	}
 
 	/**
-	 * 侦听器 Bean  
-	 */
-	private volatile static SaTokenListener saTokenListener;
-	public static void setSaTokenListener(SaTokenListener saTokenListener) {
-		SaManager.saTokenListener = saTokenListener;
-	}
-	public static SaTokenListener getSaTokenListener() {
-		if (saTokenListener == null) {
-			synchronized (SaManager.class) {
-				if (saTokenListener == null) {
-					setSaTokenListener(new SaTokenListenerDefaultImpl());
-				}
-			}
-		}
-		return saTokenListener;
-	}
-
-	/**
 	 * 临时令牌验证模块 Bean  
 	 */
 	private volatile static SaTempInterface saTemp;
@@ -192,14 +156,68 @@ public class SaManager {
 		}
 		return saTemp;
 	}
+
+	/**
+	 * JSON 转换器 Bean 
+	 */
+	private volatile static SaJsonTemplate saJsonTemplate;
+	public static void setSaJsonTemplate(SaJsonTemplate saJsonTemplate) {
+		SaManager.saJsonTemplate = saJsonTemplate;
+	}
+	public static SaJsonTemplate getSaJsonTemplate() {
+		if (saJsonTemplate == null) {
+			synchronized (SaManager.class) {
+				if (saJsonTemplate == null) {
+					setSaJsonTemplate(new SaJsonTemplateDefaultImpl());
+				}
+			}
+		}
+		return saJsonTemplate;
+	}
+
+	/**
+	 * 参数签名 Bean 
+	 */
+	private volatile static SaSignTemplate saSignTemplate;
+	public static void setSaSignTemplate(SaSignTemplate saSignTemplate) {
+		SaManager.saSignTemplate = saSignTemplate;
+	}
+	public static SaSignTemplate getSaSignTemplate() {
+		if (saSignTemplate == null) {
+			synchronized (SaManager.class) {
+				if (saSignTemplate == null) {
+					setSaSignTemplate(new SaSignTemplateDefaultImpl());
+				}
+			}
+		}
+		return saSignTemplate;
+	}
+
+	/**
+	 * Same-Token Bean 
+	 */
+	private volatile static SaSameTemplate saSameTemplate;
+	public static void setSaSameTemplate(SaSameTemplate saSameTemplate) {
+		SaManager.saSameTemplate = saSameTemplate;
+	}
+	public static SaSameTemplate getSaSameTemplate() {
+		if (saSameTemplate == null) {
+			synchronized (SaManager.class) {
+				if (saSameTemplate == null) {
+					setSaSameTemplate(new SaSameTemplate());
+				}
+			}
+		}
+		return saSameTemplate;
+	}
 	
 	/**
 	 * StpLogic集合, 记录框架所有成功初始化的StpLogic 
 	 */
-	public static Map<String, StpLogic> stpLogicMap = new HashMap<String, StpLogic>();
+	public static Map<String, StpLogic> stpLogicMap = new LinkedHashMap<String, StpLogic>();
 	
 	/**
-	 * 向集合中 put 一个 StpLogic 
+	 * 向全局集合中 put 一个 StpLogic 
 	 * @param stpLogic StpLogic
 	 */
 	public static void putStpLogic(StpLogic stpLogic) {
@@ -207,32 +225,56 @@ public class SaManager {
 	}
 
 	/**
-	 * 根据 LoginType 获取对应的StpLogic，如果不存在则抛出异常 
+	 * 根据 LoginType 获取对应的StpLogic，如果不存在则新建并返回 
 	 * @param loginType 对应的账号类型 
 	 * @return 对应的StpLogic
 	 */
 	public static StpLogic getStpLogic(String loginType) {
-		// 如果type为空则返回框架内置的 
+		return getStpLogic(loginType, true);
+	}
+	
+	/**
+	 * 根据 LoginType 获取对应的StpLogic，如果不存在，isCreate参数=是否自动创建并返回 
+	 * @param loginType 对应的账号类型 
+	 * @param isCreate 在 StpLogic 不存在时，true=新建并返回，false=抛出异常
+	 * @return 对应的StpLogic
+	 */
+	public static StpLogic getStpLogic(String loginType, boolean isCreate) {
+		// 如果type为空则返回框架默认内置的 
 		if(loginType == null || loginType.isEmpty()) {
 			return StpUtil.stpLogic;
 		}
 		
-		// 从SaManager中获取 
+		// 从集合中获取 
 		StpLogic stpLogic = stpLogicMap.get(loginType);
 		if(stpLogic == null) {
-			/*
-			 * 此时有两种情况会造成 StpLogic == null 
-			 * 1. loginType拼写错误，请改正 （建议使用常量） 
-			 * 2. 自定义StpUtil尚未初始化（静态类中的属性至少一次调用后才会初始化），解决方法两种
-			 * 		(1) 从main方法里调用一次
-			 * 		(2) 在自定义StpUtil类加上类似 @Component 的注解让容器启动时扫描到自动初始化 
-			 */
-			throw new SaTokenException("未能获取对应StpLogic，type="+ loginType);
+			
+			// isCreate=true时，自创建模式：自动创建并返回 
+			if(isCreate) {
+				synchronized (SaManager.class) {
+					stpLogic = stpLogicMap.get(loginType);
+					if(stpLogic == null) {
+						stpLogic = new StpLogic(loginType);
+						// 此处无需手动put，因为 StpLogic 构造方法中会自动put 
+						// putStpLogic(stpLogic); 
+					}
+				}
+			} 
+			// isCreate=false时，严格校验模式：抛出异常 
+			else {
+				/*
+				 * 此时有两种情况会造成 StpLogic == null 
+				 * 1. loginType拼写错误，请改正 （建议使用常量） 
+				 * 2. 自定义StpUtil尚未初始化（静态类中的属性至少一次调用后才会初始化），解决方法两种
+				 * 		(1) 从main方法里调用一次
+				 * 		(2) 在自定义StpUtil类加上类似 @Component 的注解让容器启动时扫描到自动初始化 
+				 */
+				throw new SaTokenException("未能获取对应StpLogic，type="+ loginType);
+			}
 		}
 		
 		// 返回 
 		return stpLogic;
 	}
-	
 	
 }

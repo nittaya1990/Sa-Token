@@ -192,7 +192,7 @@ public class TestController {
 		return AjaxJson.getSuccess();
 	}
 
-	// 测试登录接口, 按照设备登录， 浏览器访问： http://localhost:8081/test/login2
+	// 测试登录接口, 按照设备类型登录， 浏览器访问： http://localhost:8081/test/login2
 	@Mapping("login2")
 	public AjaxJson login2(@Param(defaultValue="10001") String id, @Param(defaultValue="PC") String device) {
 		StpUtil.login(id, device);
@@ -217,7 +217,7 @@ public class TestController {
 	public AjaxJson search() {
 		System.out.println("--------------");
 		Ttime t = new Ttime().start();
-		List<String> tokenValue = StpUtil.searchTokenValue("8feb8265f773", 0, 10);
+		List<String> tokenValue = StpUtil.searchTokenValue("8feb8265f773", 0, 10, true);
 		for (String v : tokenValue) {
 //			SaSession session = StpUtil.getSessionBySessionId(sid);
 			System.out.println(v);
@@ -226,7 +226,7 @@ public class TestController {
 		return AjaxJson.getSuccess();
 	}
 
-	// 测试指定设备登录   浏览器访问： http://localhost:8081/test/loginByDevice
+	// 测试指定设备类型登录   浏览器访问： http://localhost:8081/test/loginByDevice
 	@Mapping("loginByDevice")
 	public AjaxJson loginByDevice() {
 		System.out.println("--------------");

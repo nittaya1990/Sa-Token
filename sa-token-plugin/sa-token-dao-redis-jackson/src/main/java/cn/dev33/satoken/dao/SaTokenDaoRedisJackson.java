@@ -1,12 +1,15 @@
 package cn.dev33.satoken.dao;
 
 import java.lang.reflect.Field;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -17,18 +20,33 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 
+import cn.dev33.satoken.strategy.SaStrategy;
 import cn.dev33.satoken.util.SaFoxUtil;
 
 /**
- * Sa-Token持久层接口 [Redis版] (使用 jackson 序列化方式)
+ * Sa-Token 持久层实现 [Redis存储、Jackson序列化]
  * 
  * @author kong
  * 
  */
 @Component
 public class SaTokenDaoRedisJackson implements SaTokenDao {
-	
+
+	public static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
+	public static final String DATE_PATTERN = "yyyy-MM-dd";
+	public static final String TIME_PATTERN = "HH:mm:ss";
+	public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN);
+	public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern(DATE_PATTERN);
+	public static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern(TIME_PATTERN);
+
 	/**
 	 * ObjectMapper对象 (以public作用域暴露出此对象，方便开发者二次更改配置)
 	 */
@@ -51,6 +69,10 @@ public class SaTokenDaoRedisJackson implements SaTokenDao {
 	
 	@Autowired
 	public void init(RedisConnectionFactory connectionFactory) {
+		// 不重复初始化 
+		if(this.isInit) {
+			return;
+		}
 		
 		// 指定相应的序列化方案 
 		StringRedisSerializer keySerializer = new StringRedisSerializer();
@@ -64,7 +86,19 @@ public class SaTokenDaoRedisJackson implements SaTokenDao {
 			// 配置[忽略未知字段]
 			this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 			// 配置[时间类型转换]
-			this.objectMapper.registerModule(new JavaTimeModule());
+			JavaTimeModule timeModule = new JavaTimeModule();
+			// LocalDateTime序列化与反序列化
+			timeModule.addSerializer(new LocalDateTimeSerializer(DATE_TIME_FORMATTER));
+			timeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(DATE_TIME_FORMATTER));
+			// LocalDate序列化与反序列化
+			timeModule.addSerializer(new LocalDateSerializer(DATE_FORMATTER));
+			timeModule.addDeserializer(LocalDate.class, new LocalDateDeserializer(DATE_FORMATTER));
+			// LocalTime序列化与反序列化
+			timeModule.addSerializer(new LocalTimeSerializer(TIME_FORMATTER));
+			timeModule.addDeserializer(LocalTime.class, new LocalTimeDeserializer(TIME_FORMATTER));
+			this.objectMapper.registerModule(timeModule);
+			// 重写 SaSession 生成策略 
+			SaStrategy.me.createSession = (sessionId) -> new SaSessionForJacksonCustomized(sessionId);
 		} catch (Exception e) {
 			System.err.println(e.getMessage());
 		}
@@ -82,11 +116,9 @@ public class SaTokenDaoRedisJackson implements SaTokenDao {
 		template.afterPropertiesSet();
 		
 		// 开始初始化相关组件 
-		if(this.isInit == false) {
-			this.stringRedisTemplate = stringTemplate;
-			this.objectRedisTemplate = template;
-			this.isInit = true;
-		}
+		this.stringRedisTemplate = stringTemplate;
+		this.objectRedisTemplate = template;
+		this.isInit = true;
 	}
 	
 	
@@ -241,10 +273,10 @@ public class SaTokenDaoRedisJackson implements SaTokenDao {
 	 * 搜索数据 
 	 */
 	@Override
-	public List<String> searchData(String prefix, String keyword, int start, int size) {
+	public List<String> searchData(String prefix, String keyword, int start, int size, boolean sortType) {
 		Set<String> keys = stringRedisTemplate.keys(prefix + "*" + keyword + "*");
 		List<String> list = new ArrayList<String>(keys);
-		return SaFoxUtil.searchList(list, start, size);
+		return SaFoxUtil.searchList(list, start, size, sortType);
 	}
 	
 }
